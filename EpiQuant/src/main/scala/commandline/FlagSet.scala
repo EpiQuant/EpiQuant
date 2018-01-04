@@ -76,13 +76,16 @@ class FlagSet(flagSets: FlagSet*)(loneFlags: Opt*) extends Iterable[Opt] {
   }
 
   /**
-   * Return the Opt case class with a given flag name
+   * Return the Opt class with a given flag name
    *   The flag's longName must be used with this method
    */
   def get(flagName: String): Opt = {
     val flag = flags.find(f => f.longName == flagName)
     flag match {
-      case Some(i) => return i
+      case Some(i) => {
+        if (i.isInstanceOf[ValueOpt[_]]) i.asInstanceOf[ValueOpt[_]]
+        else i.asInstanceOf[SwitchOpt]
+      }
       case None => throw new Error(flag + " is not a valid flag")
     }
   }

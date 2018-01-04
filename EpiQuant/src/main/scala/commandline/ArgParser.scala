@@ -2,7 +2,7 @@ package commandline
 
 import collection.mutable.ListBuffer
 
- /*
+/*
   1. Find flag
   2. Determine whether it is a short or long flag
   3. See if flag is expected in the flag set
@@ -10,8 +10,8 @@ import collection.mutable.ListBuffer
   4. Gather all flag entries (iterate until another flag is found)
   5. Validate that all of the entries can be cast to the correct type
   6. Add to the list in the value field of the parsed set
+ */
 
-   */
 object ArgParser {
   
   def parseArgs(args: Array[String], flagSet: FlagSet): FlagSet = {
@@ -30,7 +30,7 @@ object ArgParser {
         else throw new Error(flagName + " is not a valid flag")
       }
       // Get the type of the Opt (requires looking up the actual opt from just the long name)
-      val flagOpt = flagSet.get(flagLongName)
+      val flagOpt: Opt = flagSetCopy.get(flagLongName)
       flagOpt match {
         // Opt is a sealed class, so these cases are exhaustive
         case switchOpt: SwitchOpt => {
@@ -42,25 +42,20 @@ object ArgParser {
           else flagSetCopy.flipSwitchValue(flagLongName)
         }
         case valOpt: ValueOpt[_] => {
-          if (flagValues.length == 0) {
-            throw new Error("The " + flagName + "flag needs to be followed by a value")
-          }
+          if (flagValues.length == 0) throw new Error("The " + flagName + "flag needs to be followed by a value")
           else if (flagValues.length > 1 && !valOpt.multipleEntriesAllowed) {
             throw new Error("The " + flagName + " does not accept multiple values")
           }
           else {
-            /*
-             *  Add all of the values to the flagSetCopy
-             */
+            // Indicate this flag was present
+            valOpt.flagWasPresent = true
+            // Add all of the values to the flagSetCopy
             addValuesToFlagSet(flagName, flagSetCopy, flagValues)
           }
         }
       }
     })
-    
-    /*
-     * Verify that all of the required ValueOpts were present
-     */
+    // Verify that all of the required ValueOpts were present
     flagSetCopy.flags.foreach(flag => {
       flag match {
         case f: SwitchOpt => // do nothing, as switch opts are never required

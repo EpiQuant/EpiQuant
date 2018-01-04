@@ -3,29 +3,29 @@ package commandline
 object ArgCollections {
   
   val sparkFlags = new FlagSet()(
-    Opt[String]("sparkMaster",
+    new ValueOpt[String]("sparkMaster",
                 required = true,
                 description = "This is a very long description of the tool in question..................the description",
-                validInputs = "<String>",
+                validInputTypes = "<String>",
                 default = "local"
     ),
-    Opt[Int]("numExecutors",
+    new ValueOpt[Int]("numExecutors",
              required = true,
-             description = "This is another long description of the tool in question... pfghje the description",
-             validInputs = "<Int>",
+             description = "This is another long of the tool in question... pfghje the description",
+             validInputTypes = "<Int>",
              default = "local"
     )
   )
   
   val threadFlags = new FlagSet()(
-    Opt[Int]("threads",
-             description = "This is a very long description of the tool in question..................the description",
-             validInputs = "<String>",
+    new ValueOpt[Int]("threads",
+             description = "This is a very long description of the tool in question...the description",
+             validInputTypes = "<String>",
              default = "local"
     ),
-    Opt[String]("threadType",
-                description = "This is a tool in question.............the description",
-                validInputs = "<String>",
+    new ValueOpt[String]("threadType",
+                description = "This is a tool in question..dfgjhdfghetyhbr4356789...........the description",
+                validInputTypes = "<String>",
                 default = "local"
     )
   )

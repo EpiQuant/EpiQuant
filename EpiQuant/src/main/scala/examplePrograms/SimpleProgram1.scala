@@ -9,23 +9,32 @@ object SimpleProgram1 extends CommandLineProgram {
       shortDescription = "A short description of the program"
   )
 
-  val flagSet = new FlagSet(sparkFlags, threadFlags) (
-    Opt[String]("input", "i", required = true,
+  val flagSet = new FlagSet()(//sparkFlags, threadFlags) (
+    new ValueOpt[String]("input", "i", required = true,
                 description = "This is a very long description of the tool in question..................the description",
-                validInputs = "<String>",
+                validInputTypes = "<String>",
                 default = "~/po.txt"
                ),
-    Opt[String]("output", "o", required = true,
-                description = "This is the discription of the output",
-                validInputs = "<String>"
+    new ValueOpt[String]("output", "o", required = true,
+                description = "This is the description of the output",
+                validInputTypes = "<String>"
                ),
-    Opt[String]("optionalValue",
+    new ValueOpt[String]("optionalValue",
                 description = "This value is optional",
-                validInputs = "<String>"
-               )
+                validInputTypes = "<String>"
+               ),
+    SwitchOpt("help", "h",
+              description = "print the help thing",
+              default = "false"
+             )
   )
   
   def programMain(args: Array[String]) {
-    println(flagSet.get("input").longName)
+    
+   val fakeArgs = Array("-h", "--input", "~/po", "--output", "~/ro")
+   val parsedArgs = ArgParser.parseArgs(fakeArgs, flagSet)
+   
+   println(parsedArgs.get("input"))
+    
   } 
 }

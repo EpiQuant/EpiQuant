@@ -1,0 +1,33 @@
+Jan 25th,
+
+I've concluded that the command line parser he was making was impossible to make. 
+I wanted to create a parser in which you could pass in sets of premade set of flags in one list, then add the 
+tool specific ones to another list.
+
+I wanted the options one gives to be typed like so,
+
+listOfOpts[T] (
+  numberOfThreads[Int] ( ... )
+  goodString[String] ( ... )
+    ... and so on
+)
+
+Because these would be in a collection together, they would need to be part of the same type hierachy (for them to be in a collection with
+a type that is a super type of all of the members, like "Any" for example. But we don't want that because we only want a select number of
+types to be valid types for an option, like Int, Double, Boolean, String, etc. 
+
+Implicits could handle this just fine (using the type-class design pattern), but there is no way to pass around a 
+collection of limited types like this to generic functions. One can instantiate a collection that automatically shifts to having an
+acceptable type be extending the 'GenericTraversableTemplate' trait (as seen with Vector, Seq, and other collections), but there is no
+way to pass an ad hoc type around like this to generic functions. And this was needed when actually writing the parser and actually using
+these collections of opts.
+
+I studied how both scopt and scallop wrote their parsers, and concluded the following:
+
+scallop simply has users set options as values in a config class before using them. They are never actually saved together as a collection
+  anywhere, they are just members of the same class. This is fine, but it obviously means that we cannot implement the "collection of
+  predefined collections" (ACTUALLY, maybe this is just the way to do it!!!!!!!!!! Instead of trying to combine previously made collections
+  with new ones in actual lists/arrays/collections of options, we give users ways to define and extend their own with Scala's 'extend' and 
+  'with' features.!!!!!!!!!!!!)
+  
+  I'll look into this in a moment

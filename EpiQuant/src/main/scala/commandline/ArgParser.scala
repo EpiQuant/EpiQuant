@@ -14,7 +14,7 @@ import collection.mutable.ListBuffer
 
 object ArgParser {
   
-  def parseArgs(args: Array[String], flagSet: FlagSet): FlagSet = {
+  def parseArgs(args: Array[String], flagSet: FlagSet[Opt]): FlagSet[Opt] = {
     val flagSetCopy = flagSet.copy()
     val collectedFlags = collectFlagsWithValues(args)
     
@@ -30,7 +30,7 @@ object ArgParser {
         else throw new Error(flagName + " is not a valid flag")
       }
       // Get the type of the Opt (requires looking up the actual opt from just the long name)
-      val flagOpt: Opt = flagSetCopy.get(flagLongName)
+      val flagOpt: Opt = flagSetCopy(flagLongName)
       flagOpt match {
         // Opt is a sealed class, so these cases are exhaustive
         case switchOpt: SwitchOpt => {
@@ -47,7 +47,7 @@ object ArgParser {
             throw new Error("The " + flagName + " does not accept multiple values")
           }
           else {
-            // Indicate this flag was present
+            // Indicate that this flag was present
             valOpt.flagWasPresent = true
             // Add all of the values to the flagSetCopy
             addValuesToFlagSet(flagName, flagSetCopy, flagValues)
@@ -106,7 +106,7 @@ object ArgParser {
    *    adds the values to the FlagSet
    *  
    */
-  private def addValuesToFlagSet(flag: String, flagSet: FlagSet, flagValues: List[String]): Unit = {
+  private def addValuesToFlagSet(flag: String, flagSet: FlagSet[Opt], flagValues: List[String]): Unit = {
     // Throw error if flag is not a valid flag
     if (!isFlag(flag)) throw new Error(flag + " is not a valid flag")
     

@@ -1,6 +1,14 @@
 package commandline
 
-object FlagSet {
+import scala.collection.generic.IndexedSeqFactory
+import scala.collection.generic.GenericCompanion
+import scala.collection.generic.GenericTraversableTemplate
+
+/*
+ *  Extending with the IndexedSeqFactory (along with GenericTraversableTemplate) allows the nested type to be 
+ *  flexible in a list (Just like in a scala Vector)
+ */
+object FlagSet extends IndexedSeqFactory[FlagSet] {
   /**
    * Prints a neatly formatted summary of a given option
    */
@@ -26,14 +34,32 @@ object FlagSet {
   }
 }
 
-class FlagSet(flagSets: FlagSet*)(loneFlags: Opt*) extends Iterable[Opt] {
+class FlagSet[T](val flagSets: List[FlagSet[T]], val loneFlags: List[Opt])(implicit converter: TypeConverter[T]) 
+    extends Iterable[T] with GenericTraversableTemplate[T, FlagSet] {
   
-  def apply(flagSets: FlagSet*)(flags: Opt*) = new FlagSet(flagSets:_*)(flags:_*)
-  def iterator() = flags.iterator
-    
-  def copy(): FlagSet = new FlagSet()(flags:_*)
+  override def companion: GenericCompanion[FlagSet] = FlagSet
+
+  //def apply(flagSets: FlagSet[T]*)(flags: Opt*) = new FlagSet(flagSets:_*)(flags:_*)
   
+  /**
+   * Return the Opt class with a given flag name
+   *   The flag's longName must be used with this method
+   */
+  def apply(flagName: String): Opt = {
+    val flag = flags.find(f => f.longName == flagName)
+    flag match {
+      case Some(i) => {
+        if (i.isInstanceOf[ValueOpt[_]]) i.asInstanceOf[ValueOpt[_]]
+        else i.asInstanceOf[SwitchOpt]
+      }
+      case None => throw new Error(flag + " is not a valid flag")
+    }
+  }
+  //def iterator() = flags.iterator
   private[commandline] val flags: Seq[Opt] = flagSets.flatMap(_.flags) ++ loneFlags
+
+  def copy(): FlagSet[Opt] = FlagSet(List.empty[Opt], List(flags:_*))
+  
 
   /* Map where keys are flag's short names and values are the corresponding long names
    *   This is a lazy val, meaning that if no short names ever need to be converted to its long name, 
@@ -74,21 +100,6 @@ class FlagSet(flagSets: FlagSet*)(loneFlags: Opt*) extends Iterable[Opt] {
     val shortNames = flags.map(_.shortName)
     if ((longNames ++ shortNames).contains(flagName)) true else false
   }
-
-  /**
-   * Return the Opt class with a given flag name
-   *   The flag's longName must be used with this method
-   */
-  def get(flagName: String): Opt = {
-    val flag = flags.find(f => f.longName == flagName)
-    flag match {
-      case Some(i) => {
-        if (i.isInstanceOf[ValueOpt[_]]) i.asInstanceOf[ValueOpt[_]]
-        else i.asInstanceOf[SwitchOpt]
-      }
-      case None => throw new Error(flag + " is not a valid flag")
-    }
-  }
   
   /**
    * Turn a SwitchOpt from disabled to enabled
@@ -117,19 +128,25 @@ class FlagSet(flagSets: FlagSet*)(loneFlags: Opt*) extends Iterable[Opt] {
    *   
    *   This function is called for its side effect
    */
-  private[commandline] def addValueToFlag(flagName: String, value: String): Unit = {
+  private[commandline] def addValueToFlag[T](flagName: String, value: String)(implicit converter: TypeConverter[T]): Unit = {
     val option: Option[Opt] = flags.find(x => x.longName == flagName)
-    val verifiedOpt: ValueOpt[_] = {
+    val verifiedOpt: ValueOpt[T] = {
       option match {
         // Throw error if a switch option is followed by values
         case Some(i) if i.isInstanceOf[SwitchOpt] => throw new Error("The " + flagName + " does not take values")
-        case Some(i) => i.asInstanceOf[ValueOpt[_]]
+        case Some(i) => i.asInstanceOf[ValueOpt[T]]
         case None => throw new Error(flagName + " is not a valid flag name")
       }
     }
-    // Try to add this value to the flags list of values (will through error if value is not castable to the correct type)
+    // Try to add this value to the flags list of values (will throw error if value is not castable to the correct type)
     //   (THIS IS A SIDE-EFFECT, as it is adding a value to a mutable collection)
-    verifiedOpt.addValue(value)
+    try {
+      val v = value
+      verifiedOpt.addValue(value)
+    }
+    catch {
+      case e: Error => throw new Error
+    }
   }
   
   /**

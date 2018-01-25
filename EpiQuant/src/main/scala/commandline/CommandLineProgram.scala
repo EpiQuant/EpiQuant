@@ -28,7 +28,7 @@ trait CommandLineProgram {
   val properties: Properties
 
   // What flags can be given
-  val flagSet: FlagSet
+  val flagSet: FlagSet[Opt]
  
   // The program's "main" function
   def programMain(args: Array[String]): Unit
